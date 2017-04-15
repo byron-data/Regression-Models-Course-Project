@@ -1,0 +1,98 @@
+---
+title: "Regression Models Course Project"
+author: "Byron Stuart"
+date: "30 April 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Executive Summary
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+1. "Is an automatic or manual transmission better for MPG"
+2. "Quantify the MPG difference between automatic and manual transmissions"
+    
+In the simple regression model it was shown that a manual transmission achieves 7.245 mpg better than an automatic transmission.
+    
+In the multivariable regression model it was shown that a manual transmission accounts for 1.80921 mpg of the improvement over an automatic transmission. Other factors namely the number of cylinders, horse power and weight were shown to have a significant impact on mpg.
+
+##Exploratory Data Analysis
+```{r, echo=FALSE}
+data(mtcars)
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- as.factor(mtcars$vs)
+mtcars$am <- as.factor(mtcars$am); levels(mtcars$am) <- c("Automatic", "Manual")
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+
+#Examine the difference in MPG between automatic and manual
+#aggregate(mpg~am, data=mtcars, mean)
+#Manual achieves approximately 7 mpg better than automatic, for a box plot comparing Automatic and Manual see the Appendix
+```
+
+```{r, echo=FALSE}
+#Do a t-test to compare Automatic and Manual mpg**
+
+#t.test(mtcars[mtcars$am == "Automatic",]$mpg, mtcars[mtcars$am == "Manual",]$mpg)
+#With a p-value of 0.001374 and 0 not in the 95% confidence interval, we reject the null hypothesis that there is no significant difference in the mpg between automatic and manual cars
+```
+
+###Simple Linear Regression
+```{r, echo=TRUE}
+#Use am variable only
+fit <- lm(mpg ~ am, data=mtcars)
+summary(fit)$coeff
+```
+
+**Manual achieves 7.245 mpg better than automatic**
+
+###Multivariable Linear Regression
+```{r, echo=TRUE}
+#Use all variables
+all <- lm(mpg ~ ., data=mtcars)
+summary(all)$adj.r.squared; summary(fit)$adj.r.squared
+```
+
+**R-Squared has risen to 0.779 compared to 0.338 for Simple Linear Regression.**
+
+```{r, echo=TRUE}
+#Select a formula-based model by AIC, this will test multiple regression
+#models and select the best variables. Useful variables for predicting 
+#mpg will be kept whilst others will be omitted.
+best <- step(all, direction="both", trace=FALSE)
+summary(best)$coeff
+summary(best)$adj.r.squared
+```
+
+**Using "cyl + hp + wt + am"" R-Squared has risen to 0.840 compared to 0.779 using all variables, removing some variables has increased the accuracy of our model.**
+
+###Compare the two models
+```{r, echo=TRUE}
+anova(fit, best)
+```
+
+**A very small p-value of 1.688e-08 indicates that we reject the null hypothesis, that is our "best" model is significantly different to the simple model.**
+
+####Assumptions from plots of the "best" model (see Appendix for plots)
+
+- The points in the Residuals vs. Fitted plot indicate a linear trend so linear regression can be assumed.
+- The Normal Q-Q plot shows no outliers therefore the residuals are normally distributed.
+- The Scale-Location shows the points are randomly distributed therefore there is constant variance.
+- The Residuals vs Leverage shows some significant outliers indicating they have some leverage.
+
+##Appendix
+
+###Plots of the "best" model
+```{r, echo=FALSE}
+#plot(best, which = c(1:1))
+par(mfrow = c(2, 2))
+plot(best)
+```
+
+```{r, echo=FALSE}
+par(mfrow = c(1, 1))
+boxplot(mpg ~ am, data=mtcars, main="MPG - Automatic vs Manual", ylab="MPG", xlab="Transmission")
+```
